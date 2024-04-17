@@ -30,8 +30,7 @@ if(isset($_COOKIE['ID_your_site'])){
 			header("Location: login.php"); 
  		} else {
  			// Если пароль совпадает, показываем административную область
- 			echo "Admin Area<p>"; 
-     		echo "Your Content<p>"; 
+ 			echo "Ты успешно залогинился!<p>"; 
      		echo "<a href=logout.php>Logout</a>"; 
  		}
 	} else {
