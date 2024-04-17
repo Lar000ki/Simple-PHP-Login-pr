@@ -1,87 +1,57 @@
 <?php 
-//Connects to your Database 
-mysql_connect("db location", "username", "password") or die(mysql_error()); 
-mysql_select_db("database name") or die(mysql_error()); 
+// Устанавливаем соединение с базой данных
+$conect = mysqli_connect("localhost", "root", "20Lw0aTiIYLvyZZ", "loginbase") or die(mysqli_connect_error()); 
 
-//This code runs if the form has been submitted
+// Проверяем, была ли отправлена форма
 if (isset($_POST['submit'])) { 
 
-//This makes sure they did not leave any fields blank
-if (!$_POST['username'] | !$_POST['pass'] | !$_POST['pass2'] ) {
-	die('You did not complete all of the required fields');
-}
+    // Проверяем, чтобы все поля были заполнены
+    if (!$_POST['username'] | !$_POST['pass'] | !$_POST['pass2'] ) {
+        die('You did not complete all of the required fields');
+    }
 
-// checks if the username is in use
-if (!get_magic_quotes_gpc()) {
-	$_POST['username'] = addslashes($_POST['username']);
-}
+    // Проверяем, не используется ли уже указанное имя пользователя
+    $usercheck = mysqli_real_escape_string($conect, $_POST['username']);
+    $check = mysqli_query($conect, "SELECT username FROM users WHERE username = '$usercheck'") or die(mysqli_error($conect));
+    $check2 = mysqli_num_rows($check);
 
-$usercheck = $_POST['username'];
-$check = mysql_query("SELECT username FROM users WHERE username = '$usercheck'") 
-or die(mysql_error());
-$check2 = mysql_num_rows($check);
+    // Если имя пользователя уже используется, выводим сообщение об ошибке
+    if ($check2 != 0) {
+        die('Sorry, the username '.$_POST['username'].' is already in use.');
+    }
 
-//if the name exists it gives an error
-if ($check2 != 0) {
- 	die('Sorry, the username '.$_POST['username'].' is already in use.');
-}
+    // Проверяем совпадение паролей
+    if ($_POST['pass'] != $_POST['pass2']) {
+        die('Your passwords did not match. ');
+    }
 
-// this makes sure both passwords entered match
-if ($_POST['pass'] != $_POST['pass2']) {
-	die('Your passwords did not match. ');
-}
+    // Шифруем пароль
+    $password = md5($_POST['pass']);
+    $username = mysqli_real_escape_string($conect, $_POST['username']);
 
-// here we encrypt the password and add slashes if needed
-$_POST['pass'] = md5($_POST['pass']);
+    // Вставляем данные в базу данных
+    $insert = "INSERT INTO users (username, password) VALUES ('$username', '$password')";
+    $add_member = mysqli_query($conect, $insert);
 
-if (!get_magic_quotes_gpc()) {
-	$_POST['pass'] = addslashes($_POST['pass']);
-	$_POST['username'] = addslashes($_POST['username']);
-}
-
-// now we insert it into the database
-$insert = "INSERT INTO users (username, password) VALUES ('".$_POST['username']."', '".$_POST['pass']."')";
-$add_member = mysql_query($insert);
+    // Выводим сообщение об успешной регистрации
 ?>
+    <h1>Registered</h1>
+    <p>Thank you, you have registered - you may now <a href="login.php">login</a>.</p>
 
- <h1>Registered</h1>
-
- <p>Thank you, you have registered - you may now <a href="login.php">login</a>.</p>
-
- <?php 
- }
-
- else 
- {	
- ?>
- 
- <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
-
- <table border="0">
-
- <tr><td>Username:</td><td>
-
- <input type="text" name="username" maxlength="60">
-
- </td></tr>
-
- <tr><td>Password:</td><td>
-
- <input type="password" name="pass" maxlength="10">
-
- </td></tr>
-
- <tr><td>Confirm Password:</td><td>
-
- <input type="password" name="pass2" maxlength="10">
-
- </td></tr>
-
- <tr><th colspan=2><input type="submit" name="submit" 
-value="Register"></th></tr> </table>
-
- </form>
-
- <?php
- }
- ?> 
+<?php 
+} else {	
+    // Если форма не была отправлена, выводим форму регистрации
+?>
+    <form action="<?php echo $_SERVER['PHP_SELF']; ?>" method="post">
+        <table border="0">
+            <tr><td>Username:</td><td><input type="text" name="username" maxlength="60"></td></tr>
+            <tr><td>Password:</td><td><input type="password" name="pass" maxlength="10"></td></tr>
+            <tr><td>Confirm Password:</td><td><input type="password" name="pass2" maxlength="10"></td></tr>
+            <tr><th colspan=2><input type="submit" name="submit" value="Register"></th></tr>
+        </table>
+    </form>
+<?php
+}
+// Закрываем соединение
+mysqli_close($conect);
+?>
